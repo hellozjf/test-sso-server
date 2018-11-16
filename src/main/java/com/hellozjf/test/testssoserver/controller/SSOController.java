@@ -1,6 +1,7 @@
 package com.hellozjf.test.testssoserver.controller;
 
 import com.hellozjf.test.testssoserver.dataobject.Manufacturer;
+import com.hellozjf.test.testssoserver.form.TokenQueryForm;
 import com.hellozjf.test.testssoserver.repository.ManufacturerRepository;
 import com.hellozjf.test.testssoserver.util.ResultUtils;
 import com.hellozjf.test.testssoserver.util.UUIDUtils;
@@ -53,6 +54,8 @@ public class SSOController {
                               @RequestParam("redirect_uri") String redirectUri,
                               @RequestParam("state") String state) {
 
+        log.debug("enter wtzzy");
+
         if (! responseType.equals("code")) {
             log.error("responseType != code");
             return null;
@@ -76,26 +79,27 @@ public class SSOController {
         stringBuilder.append("&state=");
         stringBuilder.append(state);
 
+        log.debug("redirect to {}", stringBuilder.toString());
+
         return new ModelAndView(new RedirectView(stringBuilder.toString()));
     }
 
     @PostMapping("/token/query")
     @ResponseBody
-    public ResultVO tokenQuery(@RequestParam("clientId") String clientId,
-                               @RequestParam("clientSecret") String clientSecret,
-                               @RequestParam("grantType") String grantType,
-                               @RequestParam("code") String code,
-                               @RequestParam("redirectUri") String redirectUri) {
-        Manufacturer manufacturer = manufacturerRepository.findById(clientId).orElse(null);
+    public ResultVO tokenQuery(@RequestBody TokenQueryForm tokenQueryForm) {
+
+        log.debug("enter tokenQuery");
+
+        Manufacturer manufacturer = manufacturerRepository.findById(tokenQueryForm.getClientId()).orElse(null);
         if (manufacturer == null) {
             log.error("无此用户");
             return ResultUtils.error("INTERNAL_SERVER_ERROR ", "其他系统错误");
         }
 
-        if (manufacturer.getCode().equals(code) &&
-                manufacturer.getSecret().equals(clientSecret) &&
-                grantType.equals("authorization_code") &&
-                manufacturer.getRedirectUri().equals(redirectUri)) {
+        if (manufacturer.getCode().equals(tokenQueryForm.getCode()) &&
+                manufacturer.getSecret().equals(tokenQueryForm.getClientSecret()) &&
+                tokenQueryForm.getGrantType().equals("authorization_code") &&
+                manufacturer.getRedirectUri().equals(tokenQueryForm.getRedirectUrl())) {
             // 操作
             TokenVO tokenVO = new TokenVO();
             manufacturer.setToken(UUIDUtils.uuid());
@@ -116,7 +120,10 @@ public class SSOController {
 
     @GetMapping("/userinfo/query")
     @ResponseBody
-    public ResultVO tokenQuery(String accessToken) {
+    public ResultVO userInfoQuery(String accessToken) {
+
+        log.debug("enter userInfoQuery");
+
         Manufacturer manufacturer = manufacturerRepository.findByToken(accessToken);
         if (manufacturer == null || manufacturer.getTokenExpireMsTime() < System.currentTimeMillis()) {
             log.error("无效令牌");

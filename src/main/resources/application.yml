@@ -1,15 +1,23 @@
 spring:
   datasource:
-    url: jdbc:h2:./shadowsocks/ssserver
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:mysql://aliyun.hellozjf.com:3306/test-sso-server?useUnicode=true&characterEncoding=UTF-8&useSSL=false
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: Zjf@1234
   jpa:
     show-sql: false
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
+    # 不加下面这句则默认为myisam引擎
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
   h2:
     console:
       enabled: true
       settings:
         web-allow-others: true
+logging:
+  level:
+    com.hellozjf: debug
+  file: ./output/test-sso-server.log
+server:
+  port: 8081
